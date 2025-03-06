@@ -10,9 +10,6 @@ class App:
 
         self.group_rat = GroupeRat()
 
-        self.group_rat.ajout_rat(Rat(20, 25, is_player=False, size=3.0, independant=False, vitesse=3))
-        self.group_rat.ajout_rat(Rat(25, 40, is_player=False, size=3.0, independant=False, vitesse=3))
-
         pyxel.init(200, 200, title="Hello Pyxel", fps=60, display_scale=2)
         pyxel.load("test.pyxres")
         pyxel.run(self.update, self.draw)
@@ -21,8 +18,8 @@ class App:
     def update(self):
         self.group_rat.update()
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
-        """ if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
-            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran """
+        if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
+            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
         for rat in self.liste_rat_map:
             rat.mouvement()
             if rat.getDistance(self.group_rat.joueur.getX(), self.group_rat.joueur.getY()) < 20:
@@ -47,6 +44,9 @@ class Rat:
         self.angle = 4 # pour l'animation
         self.vitesse = vitesse
         self.independant = independant
+        self.direction_x = random.choice([-1, 1])
+        self.direction_y = random.choice([-1, 1])
+        self.change_direction_counter = 0
 
     def mouvement(self):
         if self.is_player:
@@ -62,10 +62,20 @@ class Rat:
                 self.y = max(0, self.y- self.vitesse)
         else:
             if self.independant:
-                if random.randint(0,30) == 0:    
-                    self.x = min(pyxel.width-8, self.x + self.vitesse) if random.randint(0,1) == 0 else max(0, self.x - self.vitesse)
-                    self.degre = min(50, self.degre + self.angle) if random.randint(0,1) == 0 else max(-50, self.degre - self.angle)
-                    self.y = min(pyxel.height-8, self.y + self.vitesse) if random.randint(0,1) == 0 else max(0, self.y - self.vitesse)
+                self.change_direction_counter += 1
+                if self.change_direction_counter > 30:  # Change la direction toutes les 30 images
+                    self.direction_x = random.choice([-1, 1])
+                    self.direction_y = random.choice([-1, 1, 1, 1])
+                    self.change_direction_counter = 0
+
+                self.x += self.direction_x * self.vitesse * 0.5
+                if random.randint(0, 4) == 0:
+                    self.y += self.direction_y * self.vitesse * 0.5
+
+                # Empeche les rats de quitter l'écran
+                self.x = max(0, min(pyxel.width - 8, self.x))
+                self.y = max(0, min(pyxel.height - 8, self.y))
+
         self.recadrage()
     
     def recadrage(self): #recadre continuellement langle vers 0°
@@ -100,7 +110,7 @@ class Rat:
 
 class GroupeRat:
     def __init__(self, x=50, y=50, liste_rat=[]):
-        self.joueur = Rat(50, 50, True, 3.0) # Le joueur
+        self.joueur = Rat(100, 100, True, 3.0) # Le joueur
         self.liste_rats = liste_rat
         self.evitement = 20
         self.cohesion = 50
