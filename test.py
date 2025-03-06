@@ -7,7 +7,7 @@ class App:
 
         self.max_rat = 4 # Nombre maximum de rats qui peuvent apparaitre sur la map
         self.liste_rat_map = [] # Liste des rats sur la map
-        self.joueur = Rat(is_player=True) # Le joueur
+        self.joueur = Rat(50, 50, True, 3.0) # Le joueur
 
         pyxel.init(200, 200, title="Hello Pyxel", fps=60, display_scale=2)
         pyxel.load("test.pyxres")
@@ -18,7 +18,7 @@ class App:
         self.joueur.update()
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
-            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width),2)) # Les rats apparaitront en haut de l'écran
+            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width),2, False, 1.0)) # Les rats apparaitront en haut de l'écran
 
     def draw(self):
         pyxel.cls(0)
@@ -27,37 +27,41 @@ class App:
             rat.draw()
 
 class Rat:
-    def __init__(self, x=50, y=50, is_player=False):
+    def __init__(self, x=50, y=50, is_player=False, size = 1.0):
         self.x = x
         self.y = y
         self.img = 0
         self.sprite = (8,0,8,8)
+        self.size = size
         self.is_player = is_player
+        self.degre = 0
+        self.angle = 4
+        self.vitesse = 3
 
     def mouvement(self):
         if self.is_player:
             if pyxel.btn(pyxel.KEY_RIGHT):
-                self.x += 3
+                self.x = min(192, self.x + self.vitesse)
+                self.degre = min(50, self.degre + self.angle)
             if pyxel.btn(pyxel.KEY_LEFT):
-                self.x -= 3
-            if pyxel.btn(pyxel.KEY_UP):
-                self.y -= 3
+                self.x = max(0, self.x - self.vitesse)
+                self.degre = max(-50, self.degre - self.angle)
             if pyxel.btn(pyxel.KEY_DOWN):
-                self.y += 3
-        else:
+                self.y = min(192, self.y + self.vitesse)
+            if pyxel.btn(pyxel.KEY_UP):
+                self.y = max(0, self.y- self.vitesse)
+        self.recadrage()
+    
+    def recadrage(self): #recadre continuellement langle vers 0°
+        if self.degre < 0 and not pyxel.btn(pyxel.KEY_LEFT):
+            self.degre += self.angle-self.angle/2
+            self.x = min(192, self.x + self.vitesse/2)
+        elif self.degre > 0 and not pyxel.btn(pyxel.KEY_RIGHT):
+            self.degre -= self.angle-self.angle/2
+            self.x = max(0, self.x - self.vitesse/2)
+        elif self.degre == 0:
             pass
-        self.blocage()
-
-    def blocage(self):
-        if self.x < 0:
-            self.x = 0
-        elif self.x > pyxel.width:
-            self.x = pyxel.width-8
-        if self.y < 0:
-            self.y = 0
-        elif self.y > pyxel.height:
-            self.y = pyxel.height-8
-
+    
     def getX(self):
         return self.x
     
@@ -68,16 +72,17 @@ class Rat:
         return self.img, self.sprite
 
     def draw(self):
-        pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3])
+        pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, self.degre, self.size)
 
     def update(self):
         self.mouvement()
-    
 
 class OrdreRat:
-    def __init__(self, x=50, y=50):
+    def __init__(self, x=50, y=50, liste_rat=[]):
         self.joueur = Rat(x,y)
-        self.liste_rats = []
+        self.liste_rats = liste_rat
+        self.evitement = 20
+        self.cohesion = 50
         # Rat(20+i*5,25+i*15) for i in range(5)
 
     def draw(self):
