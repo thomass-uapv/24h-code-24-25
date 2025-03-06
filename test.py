@@ -19,7 +19,7 @@ class App:
         self.group_rat.update()
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
-            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, False, 3.0, independant=True, vitesse=1)) # Les rats apparaitront en haut de l'écran
+            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
         for rat in self.liste_rat_map:
             rat.mouvement()
             if rat.getDistance(self.group_rat.joueur.getX(), self.group_rat.joueur.getY()) < 20:
@@ -59,20 +59,20 @@ class Rat:
                 self.y = max(0, self.y- self.vitesse)
         else:
             if self.independant:
-                self.x = min(pyxel.width-8, self.x + self.vitesse) if random.randint(0,1) == 0 else max(0, self.x - self.vitesse)
-                self.degre = min(50, self.degre + self.angle) if random.randint(0,1) == 0 else max(-50, self.degre - self.angle)
-                self.y = min(pyxel.height-8, self.y + self.vitesse) if random.randint(0,1) == 0 else max(0, self.y - self.vitesse)
+                if random.randint(0,30) == 0:    
+                    self.x = min(pyxel.width-8, self.x + self.vitesse) if random.randint(0,1) == 0 else max(0, self.x - self.vitesse)
+                    self.degre = min(50, self.degre + self.angle) if random.randint(0,1) == 0 else max(-50, self.degre - self.angle)
+                    self.y = min(pyxel.height-8, self.y + self.vitesse) if random.randint(0,1) == 0 else max(0, self.y - self.vitesse)
         self.recadrage()
     
     def recadrage(self): #recadre continuellement langle vers 0°
+        # if self.is_player:
         if self.degre < 0 and not pyxel.btn(pyxel.KEY_LEFT):
             self.degre += self.angle-self.angle/2
             self.x = min(pyxel.width-8, self.x + self.vitesse/2)
         elif self.degre > 0 and not pyxel.btn(pyxel.KEY_RIGHT):
             self.degre -= self.angle-self.angle/2
             self.x = max(0, self.x - self.vitesse/2)
-        elif self.degre == 0:
-            pass
 
     def getDistance(self,x,y):
         return ((self.x-x)**2 + (self.y-y)**2)**0.5
