@@ -10,6 +10,9 @@ class App:
 
         self.group_rat = GroupeRat()
 
+        self.group_rat.ajout_rat(Rat(20, 25, is_player=False, size=3.0, independant=False, vitesse=3))
+        self.group_rat.ajout_rat(Rat(25, 40, is_player=False, size=3.0, independant=False, vitesse=3))
+
         pyxel.init(200, 200, title="Hello Pyxel", fps=60, display_scale=2)
         pyxel.load("test.pyxres")
         pyxel.run(self.update, self.draw)
@@ -18,8 +21,8 @@ class App:
     def update(self):
         self.group_rat.update()
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
-        if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
-            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
+        """ if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rat:
+            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran """
         for rat in self.liste_rat_map:
             rat.mouvement()
             if rat.getDistance(self.group_rat.joueur.getX(), self.group_rat.joueur.getY()) < 20:
@@ -112,15 +115,21 @@ class GroupeRat:
         self.joueur.update()
         for rat in self.liste_rats:
             rat.update()
+        self.boids()
 
     def ajout_rat(self, rat):
         self.liste_rats.append(rat)
 
     def boids(self):
         for rat in self.liste_rats:
+            move_x, move_y = 0, 0
             for rat2 in self.liste_rats:
                 if rat != rat2:
-                    if rat.getDistance(rat2.getX(), rat2.getY()) < self.evitement:
-                        pass
+                    distance = rat.getDistance(rat2.getX(), rat2.getY())
+                    if distance < self.evitement:
+                        move_x += rat.getX() - rat2.getX()
+                        move_y += rat.getY() - rat2.getY()
+            rat.x += move_x * 0.05
+            rat.y += move_y * 0.05
 
 App()
