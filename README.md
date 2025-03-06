@@ -9,8 +9,8 @@ Installer python est une bonne idée...
 
 Crée un environnement virtuel est recommandé.
 
-$ python3 -m venv 24h-code
-$ source 24h-code/bin/activate
+$ python3 -m venv 24h-code\n
+$ source 24h-code/bin/activate\n
 $ pip install -r requirements.txt
 
 # Exécution
