@@ -2,14 +2,14 @@ import pyxel
 import math
 import random
 
-END_VALUE = 1000
+END_VALUE = 3000
 
 class Rat:
     def __init__(self, x=50, y=50, size = 1.0, is_player = False, independant = False, vitesse = 3):
         self.x = x
         self.y = y
         self.img = 0
-        self.sprite = (8,0,8,8)
+        self.sprite = (4,104,10,22)
         self.size = size
         self.vitesse = vitesse
         self.is_player = is_player
@@ -100,10 +100,21 @@ class Rat:
 
     def draw(self):
         if self.is_player:
-            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, self.degre, 2)
+            #personnage
+            if (pyxel.frame_count // 6) % 2 == 0:
+                pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 5, self.degre, 1.5)
+            else:
+                pyxel.blt(self.x, self.y, 0, self.sprite[0],self.sprite[1]+32, self.sprite[2], self.sprite[3], 5, self.degre, 1.5)
+        elif self.independant:
+            if (pyxel.frame_count // 6) % 2 == 0:
+                pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 5, self.degre+180, 1.0)
+            else:
+                pyxel.blt(self.x, self.y, 0, self.sprite[0],self.sprite[1]+32, self.sprite[2], self.sprite[3], 5, self.degre+180, 1.0)
         else:
-            angle = math.atan2(self.vy, self.vx)
-            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, angle,1)
+            if (pyxel.frame_count // 6) % 2 == 0:
+                pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 5, self.degre, 1.0)
+            else:
+                pyxel.blt(self.x, self.y, 0, self.sprite[0],self.sprite[1]+32, self.sprite[2], self.sprite[3], 5, self.degre, 1.0)
 
     def getDistance(self,x,y):
         return ((self.x-x)**2 + (self.y-y)**2)**0.5
@@ -211,11 +222,14 @@ class Boost:
         self.y = y
         self.vitesse = vitesse
 
+        self.img = 0
+        self.sprite = (89, 131, 15, 13)
+
     def getCo(self):
         return (self.x, self.y)
     
     def draw(self):
-        pyxel.rect(self.x, self.y, 8, 8, 8)
+        pyxel.blt(self.x,self.y,self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 5, 0, 1.0)
     
     def update(self):
         self.y += self.vitesse
@@ -231,13 +245,16 @@ class Obstacle:
         self.position = []
         self.limite = 10
         self.quant = 0
-        
+        self.img = 0
+        self.liste_sprite = ((105,65,14,15),(144,41,15,23),(120,55,10,5))
+        self.apply_sprite = []
+
     def apparition(self):
         if self.quant < self.limite:
             self.position.append([random.randint(0, 584), 0])
+            self.apply_sprite.append(random.choice(self.liste_sprite))
             self.quant +=1
-            print(self.position)
-        print("apparition faite")  
+            
     
     def deplacement(self):
         for obstacle in self.position:
@@ -248,11 +265,11 @@ class Obstacle:
             if self.position[i][1] >= 400:
                 self.quant -= 1
                 self.position.pop(i)
-                print("disparition faite")
                 
     def draw(self):
-        for obstacle in self.position:
-            pyxel.blt(obstacle[0], obstacle[1], 0, 16, 0, 16, 16, 0)
+        for i_obstacle in range(len(self.position)):
+            sprite = self.apply_sprite[i_obstacle]
+            pyxel.blt(self.position[i_obstacle][0], self.position[i_obstacle][1], self.img, sprite[0], sprite[1], sprite[2], sprite[3], 5)
     
     def update(self):
         self.deplacement()
@@ -276,14 +293,27 @@ class App:
 
         self.invincibilite = -1
 
-        pyxel.init(600, 400, title="Boids avec Pyxel")
+        self.score = 0
+
+        pyxel.init(600, 400, title="Boids avec Pyxel", display_scale=2)
         pyxel.load("5.pyxres")
         pyxel.run(self.update, self.draw)
+     
 
     def update(self):
+
+        if self.distance_parcouru == END_VALUE:
+            pyxel.blt(300,150, 0, 26, 128, 58, 33, 5, 0, 6.0)
+            pyxel.text(255,270, "Appuyer sur Q ou Echap pour quitter", 7)
+            pyxel.show()
+
+            while True:
+                if pyxel.btn(pyxel.KEY_Q):
+                    pyxel.quit()
+
         self.obstacle.update()
         self.groupe_rat.update()
-        if random.randint(0,1) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
+        if random.randint(0,5) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
             self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
         
         for boost in self.liste_boosts_map[:]:  # Iterate over a copy of the list
@@ -326,12 +356,10 @@ class App:
                 self.invincibilite = -1
                     
         
-        self.distance_parcouru += 2
+        self.distance_parcouru += 1
 
-    def draw_large_text(self, x, y, text, color):
-        for dx in range(2):
-            for dy in range(2):
-                pyxel.text(x + dx, y + dy, text, color)
+        #Score update
+        self.score = self.groupe_rat.getNbRats() * 1000
 
     def draw(self):
         pyxel.cls(0)
@@ -341,7 +369,8 @@ class App:
         for rat in self.liste_rat_map:
             rat.draw()
         self.obstacle.draw()
-        self.draw_large_text(10, 10, f"Score = {self.distance_parcouru + (self.groupe_rat.getNbRats() * 100)}", 7)
+        pyxel.text(0,0, "Score: " + str(self.score), 7)
+        # pyxel.text(0,20, f"Debug - distance parcouru : {self.distance_parcouru}",7)
 
         if self.groupe_rat.joueur.getReserveBoost() == 0:
             pyxel.blt(540, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
@@ -362,8 +391,6 @@ class App:
             pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
             pyxel.blt(560, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
             pyxel.blt(580, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
-
-
 
 # Lancement de l'application
 App()
