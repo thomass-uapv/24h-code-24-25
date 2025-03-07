@@ -271,23 +271,19 @@ class App:
         self.liste_boosts_map = []
         self.distance_parcouru = 0
 
-        self.groupe_rat = GroupeRat((300, 400))
+        self.groupe_rat = GroupeRat((300, 400), max_rats=50)
         self.obstacle = Obstacle()
+
+        self.invincibilite = -1
 
         pyxel.init(600, 400, title="Boids avec Pyxel")
         pyxel.load("5.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        if self.distance_parcouru == END_VALUE:
-            pyxel.text(200, 200, f"Partie terminé ! Bravo vous avez réussi à ramener {self.groupe_rat.getNbRats()} rats !", 8)
-            while pyxel.btn(pyxel.KEY_KP_ENTER) == False:
-                pyxel.text(200, 220, "Appuyez sur la touche Echap pour quitter", 8)
-                pyxel.text(200, 240, "Appuyez sur la touche Entrée pour relancer", 8)
-
         self.obstacle.update()
         self.groupe_rat.update()
-        if random.randint(0,250) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
+        if random.randint(0,1) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
             self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
         
         for boost in self.liste_boosts_map[:]:  # Iterate over a copy of the list
@@ -311,16 +307,23 @@ class App:
             elif rat.getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
                 self.groupe_rat.ajout_rat(rat)
                 del self.liste_rat_map[i]
-        lr = self.groupe_rat.liste_rats
-        rats_a_supprimer = []
-        for i_rat in range(len(lr) - 1, -1, -1):  # Itération en sens inverse
-            for obstacle in self.obstacle.getPositions()[:]:
-                if lr[i_rat].getDistance(obstacle[0], obstacle[1]) < 20:
-                    print("colision")
-                    rats_a_supprimer.append(i_rat)
+        
+        if self.invincibilite == -1:
+            for obstacle in self.obstacle.getPositions():
+                if self.groupe_rat.joueur.getDistance(obstacle[0], obstacle[1]) < 20 and len(self.groupe_rat.liste_rats) != 0:
+                    self.invincibilite = 0
+                    del self.groupe_rat.liste_rats[random.randint(0, len(self.groupe_rat.liste_rats)-1)]
                     break
-        for index in rats_a_supprimer:
-            del lr[index]
+                else:
+                    for rat in self.groupe_rat.liste_rats:
+                        if rat.getDistance(obstacle[0], obstacle[1]) < 20 and len(self.groupe_rat.liste_rats) != 0:
+                            self.invincibilite = 0
+                            self.groupe_rat.liste_rats.remove(rat)
+                            break
+        else:
+            self.invincibilite += 1
+            if self.invincibilite > 30:
+                self.invincibilite = -1
                     
         
         self.distance_parcouru += 2
@@ -352,7 +355,7 @@ class App:
 
         elif self.groupe_rat.joueur.getReserveBoost() == 2:
             pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
-            pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(560, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
             pyxel.blt(580, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
 
         else :
