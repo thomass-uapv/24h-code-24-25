@@ -388,12 +388,11 @@ class App:
 #                 self.backgrounds[i] = self.backgrounds[i]
         if self.distance_parcouru == END_VALUE:
             pyxel.blt(300,150, 0, 26, 128, 58, 33, 5, 0, 6.0)
-            pyxel.text(255,270, "Appuyer sur Q ou Echap pour quitter", 7)
+            pyxel.text(255,270, "Appuyer sur Echap pour quitter", 7)
             pyxel.show()
 
             while True:
-                if pyxel.btn(pyxel.KEY_Q):
-                    pyxel.quit()
+                pass
 
         self.obstacle.update()
         self.groupe_rat.update()
