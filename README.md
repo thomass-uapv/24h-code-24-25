@@ -17,4 +17,4 @@ $ pip install -r requirements.txt
 
 # Exécution
 
-python [...].py
+python game.py
