@@ -40,6 +40,7 @@ class Rat:
                 self.y = min(pyxel.height-8, self.y + self.vitesse)
             if pyxel.btn(pyxel.KEY_UP):
                 self.y = max(0, self.y- self.vitesse)
+            self.recadrage()
         elif self.independant:
             self.change_direction_counter += 1
             if self.change_direction_counter > 30:  # Change la direction toutes les 30 images
@@ -77,6 +78,15 @@ class Rat:
             # Empeche les rats de quitter l'écran
             self.x = max(0, min(pyxel.width - 8, self.x))
             self.y = max(0, min(pyxel.height - 8, self.y))
+
+    def recadrage(self): #recadre continuellement langle vers 0°
+        # if self.is_player:
+        if self.degre < 0 and not pyxel.btn(pyxel.KEY_LEFT):
+            self.degre += self.angle-self.angle/2
+            self.x = min(pyxel.width-8, self.x + self.vitesse/2)
+        elif self.degre > 0 and not pyxel.btn(pyxel.KEY_RIGHT):
+            self.degre -= self.angle-self.angle/2
+            self.x = max(0, self.x - self.vitesse/2)
 
     def align(self, liste_rats):
         """Règle d'alignement : se diriger vers la moyenne des vitesses des voisins"""
@@ -166,17 +176,21 @@ class Rat:
         return (steering_x, steering_y)
 
     def draw(self):
-        """Dessine le boid sous forme de petit triangle orienté selon sa vitesse"""
-        angle = math.atan2(self.vy, self.vx)
-        size = 4
-        # Calcul des points du triangle
-        x1 = self.x + math.cos(angle) * size
-        y1 = self.y + math.sin(angle) * size
-        x2 = self.x + math.cos(angle + 2.5) * size
-        y2 = self.y + math.sin(angle + 2.5) * size
-        x3 = self.x + math.cos(angle - 2.5) * size
-        y3 = self.y + math.sin(angle - 2.5) * size
-        pyxel.tri(x1, y1, x2, y2, x3, y3, 7)
+        if self.is_player:
+            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, self.degre, self.size)
+        else:
+            angle = math.atan2(self.vy, self.vx)
+            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, angle, self.size)
+
+    def getDistance(self,x,y):
+        return ((self.x-x)**2 + (self.y-y)**2)**0.5
+    
+    def getX(self):
+        return self.x
+    
+    def getY(self):
+        return self.y
+
 
 class GroupeRat:
     def __init__(self, coordonne, max_rats = 20):
@@ -195,7 +209,10 @@ class GroupeRat:
             rat.update(self.liste_rats)
 
     def ajout_rat(self, rat):
-        self.liste_rats.append(rat)
+        if self.max_rats > len(self.liste_rats):
+            print("Ajout d'un rat")
+            rat.independant = False
+            self.liste_rats.append(rat)
 
 class App:
     def __init__(self):
@@ -205,12 +222,20 @@ class App:
         self.groupe_rat = GroupeRat((100, 100))
 
         pyxel.init(160, 120, title="Boids avec Pyxel")
+        pyxel.load("test.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
         self.groupe_rat.update()
+        # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
+        if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rats_inde:
+            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
         for rat in self.liste_rat_map:
             rat.update(self.liste_rat_map)
+            if rat.getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
+                self.groupe_rat.ajout_rat(rat)
+                self.liste_rat_map.remove(rat)
+            
 
     def draw(self):
         pyxel.cls(0)
