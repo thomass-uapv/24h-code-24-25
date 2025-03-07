@@ -213,11 +213,6 @@ class Boost:
 
     def getCo(self):
         return (self.x, self.y)
-
-    def colision(self, rat):
-        if rat.getX() == self.x and rat.getY() == self.y:
-            return True
-        return False
     
     def draw(self):
         pyxel.rect(self.x, self.y, 8, 8, 8)
@@ -249,12 +244,11 @@ class Obstacle:
             obstacle[1]+=2
         
     def disparition(self):
-        for i in range(len(self.position)):
+        for i in range(len(self.position)-1, -1, -1):
             if self.position[i][1] >= 400:
                 self.quant -= 1
                 self.position.pop(i)
                 print("disparition faite")
-                return
                 
     def draw(self):
         for obstacle in self.position:
@@ -281,7 +275,7 @@ class App:
         self.obstacle = Obstacle()
 
         pyxel.init(600, 400, title="Boids avec Pyxel")
-        pyxel.load("test.pyxres")
+        pyxel.load("5.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -296,7 +290,7 @@ class App:
         if random.randint(0,250) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
             self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
         
-        for boost in self.liste_boosts_map:
+        for boost in self.liste_boosts_map[:]:  # Iterate over a copy of the list
             boost.update()
             if boost.y == pyxel.height:
                 self.liste_boosts_map.remove(boost)
@@ -309,22 +303,32 @@ class App:
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rats_inde:
             self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
-        lr = self.liste_rat_map
-        for i_rat in range(len(self.liste_rat_map)):
-            lr[i_rat].update(self.liste_rat_map)
-            if lr[i_rat].getY() == pyxel.height-8:
-                self.liste_rat_map.remove(lr[i_rat])
-            if lr[i_rat].getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
-                self.groupe_rat.ajout_rat(lr[i_rat])
-                self.liste_rat_map.remove(lr[i_rat])
-            for obstable in self.obstacle.getPositions():
-                if lr[i_rat] == self.groupe_rat.joueur:
-                    if lr[i_rat].getDistance(obstable[0], obstable[1]) < 20:
-                        self.groupe_rat.liste_rats.remove(lr[i_rat])
-                elif lr[i_rat].getDistance(obstable[0], obstable[1]) < 20:
-                    del self.liste_rat_map[i_rat]
+        for i in range(len(self.liste_rat_map) - 1, -1, -1):  # Itération en sens inverse
+            rat = self.liste_rat_map[i]
+            rat.update(self.liste_rat_map)
+            if rat.getY() == pyxel.height - 8:
+                del self.liste_rat_map[i]
+            elif rat.getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
+                self.groupe_rat.ajout_rat(rat)
+                del self.liste_rat_map[i]
+        lr = self.groupe_rat.liste_rats
+        rats_a_supprimer = []
+        for i_rat in range(len(lr) - 1, -1, -1):  # Itération en sens inverse
+            for obstacle in self.obstacle.getPositions()[:]:
+                if lr[i_rat].getDistance(obstacle[0], obstacle[1]) < 20:
+                    print("colision")
+                    rats_a_supprimer.append(i_rat)
+                    break
+        for index in rats_a_supprimer:
+            del lr[index]
+                    
         
-        self.distance_parcouru += 1
+        self.distance_parcouru += 2
+
+    def draw_large_text(self, x, y, text, color):
+        for dx in range(2):
+            for dy in range(2):
+                pyxel.text(x + dx, y + dy, text, color)
 
     def draw(self):
         pyxel.cls(0)
@@ -334,6 +338,27 @@ class App:
         for rat in self.liste_rat_map:
             rat.draw()
         self.obstacle.draw()
+        self.draw_large_text(10, 10, f"Score = {self.distance_parcouru + (self.groupe_rat.getNbRats() * 100)}", 7)
+
+        if self.groupe_rat.joueur.getReserveBoost() == 0:
+            pyxel.blt(540, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(560, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(580, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+
+        elif self.groupe_rat.joueur.getReserveBoost() == 1:
+            pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(560, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(580, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+
+        elif self.groupe_rat.joueur.getReserveBoost() == 2:
+            pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(580, 10, 0, 161, 20, 10, 10, 5, 0, 2.0)
+
+        else :
+            pyxel.blt(540, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(560, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
+            pyxel.blt(580, 10, 0, 141, 20, 10, 10, 5, 0, 2.0)
 
 
 
