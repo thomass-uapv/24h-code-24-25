@@ -2,6 +2,8 @@ import pyxel
 import math
 import random
 
+END_VALUE = 1000
+
 class Rat:
     def __init__(self, x=50, y=50, size = 1.0, is_player = False, independant = False, vitesse = 3):
         self.x = x
@@ -28,14 +30,35 @@ class Rat:
         self.vx = 0 # quantité de pixel à déplacer sur l'axe x
         self.vy = 0 # quantité de pixel à déplacer sur l'axe y
 
+        self.boost = 0
+        self.reserve_boost = 0
+        self.max_reserve = 3
+        self.boost_duration = -1
+
     def update(self, liste_rats):
         if self.is_player:
+            if pyxel.btn(pyxel.KEY_SHIFT) and self.boost_duration == -1 and self.reserve_boost > 0:
+                self.boost_duration = 0
+                self.reserve_boost -= 1
+            
+            if self.boost_duration != -1:
+                self.boost = 10
+                self.boost_duration += 1
+
+            if self.boost_duration > 10:
+                self.boost_duration = -1
+                self.boost = 0
+
             if pyxel.btn(pyxel.KEY_RIGHT):
-                self.x = min(pyxel.width-8, self.x + self.vitesse)
-                self.degre = min(50, self.degre + self.angle)
+                self.x = min(pyxel.width-8, self.x + self.vitesse + self.boost)
+                self.degre = min(30, self.degre + self.angle)
             if pyxel.btn(pyxel.KEY_LEFT):
-                self.x = max(0, self.x - self.vitesse)
-                self.degre = max(-50, self.degre - self.angle)
+                self.x = max(0, self.x - self.vitesse - self.boost)
+                self.degre = max(-30, self.degre - self.angle)
+            if pyxel.btn(pyxel.KEY_DOWN):
+                self.y = min(pyxel.height-8, self.y + self.vitesse + self.boost)
+            if pyxel.btn(pyxel.KEY_UP):
+                self.y = max(0, self.y- self.vitesse - self.boost)
             self.recadrage()
         elif self.independant:
             self.change_direction_counter += 1
@@ -77,10 +100,10 @@ class Rat:
 
     def draw(self):
         if self.is_player:
-            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, self.degre, self.size)
+            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, self.degre, 2)
         else:
             angle = math.atan2(self.vy, self.vx)
-            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, angle, self.size)
+            pyxel.blt(self.x, self.y, self.img, self.sprite[0], self.sprite[1], self.sprite[2], self.sprite[3], 0, angle,1)
 
     def getDistance(self,x,y):
         return ((self.x-x)**2 + (self.y-y)**2)**0.5
@@ -90,7 +113,16 @@ class Rat:
     
     def getY(self):
         return self.y
-
+    
+    def getReserveBoost(self):
+        return self.reserve_boost
+    
+    def isReserveBoostFull(self):
+        return (self.reserve_boost >= self.max_reserve)
+    
+    def addBoost(self):
+        if self.reserve_boost < self.max_reserve:
+            self.reserve_boost += 1
 
 class GroupeRat:
     def __init__(self, coordonne, max_rats = 20):
@@ -111,7 +143,6 @@ class GroupeRat:
 
     def ajout_rat(self, rat):
         if self.max_rats > len(self.liste_rats):
-            print("Ajout d'un rat")
             rat.independant = False
             self.liste_rats.append(rat)
 
@@ -120,12 +151,12 @@ class GroupeRat:
             return
 
         facteur_cohesion = 0.02
-        facteur_alignement = 0.05
+        facteur_alignement = 1
         facteur_separation = 0.1
-        distance_separation = 10
+        distance_separation = 30
 
         cible_x = self.joueur.x 
-        cible_y = self.joueur.y - 20 * (1 if pyxel.btn(pyxel.KEY_LEFT) else -1)
+        cible_y = self.joueur.y - 60 * (1 if pyxel.btn(pyxel.KEY_LEFT) else -1)
 
         for rat in self.liste_rats:
             vx_cohesion, vy_cohesion = 0, 0
@@ -171,37 +202,96 @@ class GroupeRat:
             rat.vx += (cible_x - rat.x) * 0.02
             rat.vy += (cible_y - rat.y) * 0.02
 
+    def getNbRats(self):
+        return len(self.liste_rats)
+
+class Boost:
+    def __init__(self, x, y, vitesse = 1):
+        self.x = x
+        self.y = y
+        self.vitesse = vitesse
+
+    def getCo(self):
+        return (self.x, self.y)
+
+    def colision(self, rat):
+        if rat.getX() == self.x and rat.getY() == self.y:
+            return True
+        return False
+    
+    def draw(self):
+        pyxel.rect(self.x, self.y, 8, 8, 8)
+    
+    def update(self):
+        self.y += self.vitesse
+
+    def getX(self):
+        return self.x
+    
+    def getY(self):
+        return self.y
+
+
+
 class App:
     def __init__(self):
         self.max_rats_inde = 4
         self.liste_rat_map = []
+        self.max_boosts_map = 2
+        self.liste_boosts_map = []
+        self.distance_parcouru = 0
 
         self.groupe_rat = GroupeRat((300, 400))
 
-        pyxel.init(700, 500, title="Boids avec Pyxel")
+        pyxel.init(600, 400, title="Boids avec Pyxel")
         pyxel.load("test.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
+
+        if self.distance_parcouru == END_VALUE:
+            pyxel.text(200, 200, f"Partie terminé ! Bravo vous avez réussi à ramener {self.groupe_rat.getNbRats()} rats !", 8)
+            while pyxel.btn(pyxel.KEY_KP_ENTER) == False:
+                pyxel.text(200, 220, "Appuyez sur la touche Echap pour quitter", 8)
+                pyxel.text(200, 240, "Appuyez sur la touche Entrée pour relancer", 8)
+            
+
         self.groupe_rat.update()
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
+        if random.randint(0,1) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
+            self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
+        
+        for boost in self.liste_boosts_map:
+            boost.update()
+            if boost.y == pyxel.height:
+                self.liste_boosts_map.remove(boost)
+            else:
+                if self.groupe_rat.joueur.getDistance(boost.getX(), boost.getY()) < 20:
+                    self.liste_boosts_map.remove(boost)
+                    if not self.groupe_rat.joueur.isReserveBoostFull():
+                        self.groupe_rat.joueur.addBoost()
+        
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rats_inde:
             self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
         for rat in self.liste_rat_map:
             rat.update(self.liste_rat_map)
             if rat.getY() == pyxel.height-8:
-                print("Rat supprimé")
                 self.liste_rat_map.remove(rat)
             if rat.getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
                 self.groupe_rat.ajout_rat(rat)
                 self.liste_rat_map.remove(rat)
-            
+        
+        self.distance_parcouru += 1
 
     def draw(self):
         pyxel.cls(0)
         self.groupe_rat.draw()
+        for boost in self.liste_boosts_map:
+            boost.draw()
         for rat in self.liste_rat_map:
             rat.draw()
+
+
 
 # Lancement de l'application
 App()
