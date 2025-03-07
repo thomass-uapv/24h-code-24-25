@@ -3,6 +3,7 @@ import math
 import random
 
 END_VALUE = 3000
+AREA = (170,518)
 
 class Rat:
     def __init__(self, x=50, y=50, size = 1.0, is_player = False, independant = False, vitesse = 3):
@@ -50,10 +51,10 @@ class Rat:
                 self.boost = 0
 
             if pyxel.btn(pyxel.KEY_RIGHT):
-                self.x = min(pyxel.width-8, self.x + self.vitesse + self.boost)
+                self.x = min(AREA[1], self.x + self.vitesse + self.boost)
                 self.degre = min(30, self.degre + self.angle)
             if pyxel.btn(pyxel.KEY_LEFT):
-                self.x = max(0, self.x - self.vitesse - self.boost)
+                self.x = max(AREA[0], self.x - self.vitesse - self.boost)
                 self.degre = max(-30, self.degre - self.angle)
             if pyxel.btn(pyxel.KEY_DOWN):
                 self.y = min(pyxel.height-8, self.y + self.vitesse + self.boost)
@@ -71,7 +72,7 @@ class Rat:
             self.y += self.direction_y * self.vitesse * 1.5
 
             # Empeche les rats de quitter l'écran
-            self.x = max(0, min(pyxel.width - 8, self.x))
+            self.x = max(AREA[0], min(AREA[1] - 8, self.x))
             self.y = max(0, min(pyxel.height - 8, self.y))
         else:
 
@@ -86,17 +87,17 @@ class Rat:
             self.y += self.vy
 
             # Empeche les rats de quitter l'écran
-            self.x = max(0, min(pyxel.width - 8, self.x))
+            self.x = max(AREA[0], min(AREA[1] - 8, self.x))
             self.y = max(0, min(pyxel.height - 8, self.y))
 
     def recadrage(self): #recadre continuellement langle vers 0°
         # if self.is_player:
         if self.degre < 0 and not pyxel.btn(pyxel.KEY_LEFT):
             self.degre += self.angle-self.angle/2
-            self.x = min(pyxel.width-8, self.x + self.vitesse/2)
+            self.x = min(AREA[1], self.x + self.vitesse/2)
         elif self.degre > 0 and not pyxel.btn(pyxel.KEY_RIGHT):
             self.degre -= self.angle-self.angle/2
-            self.x = max(0, self.x - self.vitesse/2)
+            self.x = max(AREA[0], self.x - self.vitesse/2)
 
     def draw(self):
         if self.is_player:
@@ -246,12 +247,12 @@ class Obstacle:
         self.limite = 10
         self.quant = 0
         self.img = 0
-        self.liste_sprite = ((105,65,14,15),(144,41,15,23),(120,55,10,5))
+        self.liste_sprite = ((105,65,14,15),(144,41,15,23),(120,55,10,5),(75,2,23,30))
         self.apply_sprite = []
 
     def apparition(self):
         if self.quant < self.limite:
-            self.position.append([random.randint(0, 584), 0])
+            self.position.append([random.randint(AREA[0], AREA[1]), 0])
             self.apply_sprite.append(random.choice(self.liste_sprite))
             self.quant +=1
             
@@ -294,14 +295,97 @@ class App:
         self.invincibilite = -1
 
         self.score = 0
-
+        
+        self.backgrounds = [
+            [
+                [82, 50, 1, 24, 0, 24, 25, 8],
+                [170, 50, 1, 1, 0, 15, 25, 5],
+                [170, 90, 1, 1, 0, 15, 25, 5],
+                [518, 50, 1, 48, 0, 16, 25, 9],
+                [266, 50, 1, 48, 25, 16, 25, 7],
+                [386, 50, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 200, 1, 24, 0, 24, 25, 8],
+                [170, 133, 1, 1, 0, 15, 25, 5],
+                [170, 250, 1, 1, 0, 15, 25, 5],
+                [518, 200, 1, 48, 0, 16, 25, 9],
+                [266, 205, 1, 48, 25, -16, -25, 7],
+                [386, 200, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 350, 1, 24, 0, 24, 25, 8],
+                [170, 300, 1, 1, 0, 15, 25, 5],
+                [170, 380, 1, 1, 0, 15, -25, 5],
+                [266, 300, 1, 48, 25, 16, -25, 9],
+                [386, 320, 1, 48, 25, -16, 25, 7],
+                [518, 350, 1, 48, 0, 16, 25, 7]
+            ], [
+                [82, 200, 1, 24, 0, 24, 25, 8],
+                [170, 133, 1, 1, 0, 15, 25, 5],
+                [170, 250, 1, 1, 0, 15, 25, 5],
+                [518, 200, 1, 48, 0, 16, 25, 9],
+                [266, 205, 1, 48, 25, -16, -25, 7],
+                [386, 200, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 50, 1, 24, 0, 24, 25, 8],
+                [170, 50, 1, 1, 0, 15, 25, 5],
+                [170, 90, 1, 1, 0, 15, 25, 5],
+                [518, 50, 1, 48, 0, 16, 25, 9],
+                [266, 50, 1, 48, 25, 16, 25, 7],
+                [386, 50, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 200, 1, 24, 0, 24, 25, 8],
+                [170, 133, 1, 1, 0, 15, 25, 5],
+                [170, 250, 1, 1, 0, 15, 25, 5],
+                [518, 200, 1, 48, 0, 16, 25, 9],
+                [266, 205, 1, 48, 25, -16, -25, 7],
+                [386, 200, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 350, 1, 24, 0, 24, 25, 8],
+                [170, 300, 1, 1, 0, 15, 25, 5],
+                [170, 380, 1, 1, 0, 15, -25, 5],
+                [266, 300, 1, 48, 25, 16, -25, 9],
+                [386, 320, 1, 48, 25, -16, 25, 7],
+                [518, 350, 1, 48, 0, 16, 25, 7]
+            ], [
+                [82, 200, 1, 24, 0, 24, 25, 8],
+                [170, 133, 1, 1, 0, 15, 25, 5],
+                [170, 250, 1, 1, 0, 15, 25, 5],
+                [518, 200, 1, 48, 0, 16, 25, 9],
+                [266, 205, 1, 48, 25, -16, -25, 7],
+                [386, 200, 1, 48, 25, 16, 25, 7]
+            ],
+            [
+                [82, 50, 1, 24, 0, 24, 25, 8],
+                [170, 50, 1, 1, 0, 15, 25, 5],
+                [170, 90, 1, 1, 0, 15, 25, 5],
+                [518, 50, 1, 48, 0, 16, 25, 9],
+                [266, 50, 1, 48, 25, 16, 25, 7],
+                [386, 50, 1, 48, 25, 16, 25, 7]
+            ]
+        ]
+        
+        self.bg_positions = [0, -100, -200, -300, -400, -500, -600, -700, -800, -900] 
+        self.scroll_speed = 2
+        
         pyxel.init(600, 400, title="Boids avec Pyxel", display_scale=2)
         pyxel.load("5.pyxres")
         pyxel.run(self.update, self.draw)
      
 
     def update(self):
-
+        for i in range(len(self.bg_positions)):
+            self.bg_positions[i] += self.scroll_speed  # Ajuste la position des groupes
+        
+    # Réinitialisation des groupes lorsqu'ils sortent de l'écran
+        for i in range(len(self.bg_positions)):
+            if self.bg_positions[i] >= 400:
+                self.bg_positions[i] -= 800  # Déplacement du fond sans réinitialiser la liste
+#                 self.backgrounds[i] = self.backgrounds[i]
         if self.distance_parcouru == END_VALUE:
             pyxel.blt(300,150, 0, 26, 128, 58, 33, 5, 0, 6.0)
             pyxel.text(255,270, "Appuyer sur Q ou Echap pour quitter", 7)
@@ -314,7 +398,7 @@ class App:
         self.obstacle.update()
         self.groupe_rat.update()
         if random.randint(0,5) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
-            self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
+            self.liste_boosts_map.append(Boost(random.randint(AREA[0],AREA[1]), 0)) # Les boosts apparaitront en haut de l'écran
         
         for boost in self.liste_boosts_map[:]:  # Iterate over a copy of the list
             boost.update()
@@ -328,7 +412,7 @@ class App:
         
         # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rats_inde:
-            self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
+            self.liste_rat_map.append(Rat(random.randint(AREA[0],AREA[1]), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
         for i in range(len(self.liste_rat_map) - 1, -1, -1):  # Itération en sens inverse
             rat = self.liste_rat_map[i]
             rat.update(self.liste_rat_map)
@@ -363,6 +447,15 @@ class App:
 
     def draw(self):
         pyxel.cls(0)
+        pyxel.blt(82, 350, 1, 24, 0, 24, 25, 0, 0, 8)
+        pyxel.blt(170, 300, 1, 1, 0, 15, 25, 0, 0, 5)
+        pyxel.blt(170, 380, 1, 1, 0, 15, -25, 0, 0, 5)
+        pyxel.blt(266, 300, 1, 48, 25, 16, -25, 0, 0, 7.5)
+        pyxel.blt(386, 320, 1, 48, 25, -16, 25, 0, 0, 7.5)
+        pyxel.blt(518, 350, 1, 48, 0, 16, 25, 0, 0, 9)
+        for i, group in enumerate(self.backgrounds):
+            for bg in group:
+                pyxel.blt(bg[0], (bg[1] + self.bg_positions[i]), bg[2], bg[3], bg[4], bg[5], bg[6], 0, 0, bg[7]+2)
         self.groupe_rat.draw()
         for boost in self.liste_boosts_map:
             boost.draw()
