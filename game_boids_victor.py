@@ -231,7 +231,43 @@ class Boost:
     def getY(self):
         return self.y
 
+class Obstacle:
+    def __init__(self):
+        self.position = []
+        self.limite = 10
+        self.quant = 0
+        
+    def apparition(self):
+        if self.quant < self.limite:
+            self.position.append([random.randint(0, 584), 0])
+            self.quant +=1
+            print(self.position)
+        print("apparition faite")  
+    
+    def deplacement(self):
+        for obstacle in self.position:
+            obstacle[1]+=2
+        
+    def disparition(self):
+        for i in range(len(self.position)):
+            if self.position[i][1] >= 400:
+                self.quant -= 1
+                self.position.pop(i)
+                print("disparition faite")
+                return
+                
+    def draw(self):
+        for obstacle in self.position:
+            pyxel.blt(obstacle[0], obstacle[1], 0, 16, 0, 16, 16, 0)
+    
+    def update(self):
+        self.deplacement()
+        self.disparition()
+        if random.randint(0, 50) == 0 and self.quant < self.limite:
+            self.apparition()
 
+    def getPositions(self):
+        return self.position
 
 class App:
     def __init__(self):
@@ -242,23 +278,22 @@ class App:
         self.distance_parcouru = 0
 
         self.groupe_rat = GroupeRat((300, 400))
+        self.obstacle = Obstacle()
 
         pyxel.init(600, 400, title="Boids avec Pyxel")
         pyxel.load("test.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
-
         if self.distance_parcouru == END_VALUE:
             pyxel.text(200, 200, f"Partie terminé ! Bravo vous avez réussi à ramener {self.groupe_rat.getNbRats()} rats !", 8)
             while pyxel.btn(pyxel.KEY_KP_ENTER) == False:
                 pyxel.text(200, 220, "Appuyez sur la touche Echap pour quitter", 8)
                 pyxel.text(200, 240, "Appuyez sur la touche Entrée pour relancer", 8)
-            
 
+        self.obstacle.update()
         self.groupe_rat.update()
-        # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
-        if random.randint(0,1) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
+        if random.randint(0,250) == 0 and len(self.liste_boosts_map) < self.max_boosts_map:
             self.liste_boosts_map.append(Boost(random.randint(0,pyxel.width-8), 0)) # Les boosts apparaitront en haut de l'écran
         
         for boost in self.liste_boosts_map:
@@ -271,15 +306,23 @@ class App:
                     if not self.groupe_rat.joueur.isReserveBoostFull():
                         self.groupe_rat.joueur.addBoost()
         
+        # randint(0,50) == 0 permet de faire apparaitre un rat sur la map avec une probabilité de 1/50
         if random.randint(0,50) == 0 and len(self.liste_rat_map) < self.max_rats_inde:
             self.liste_rat_map.append(Rat(random.randint(0,pyxel.width-8), 2, is_player=False, size=3.0, independant=True, vitesse=3)) # Les rats apparaitront en haut de l'écran
-        for rat in self.liste_rat_map:
-            rat.update(self.liste_rat_map)
-            if rat.getY() == pyxel.height-8:
-                self.liste_rat_map.remove(rat)
-            if rat.getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
-                self.groupe_rat.ajout_rat(rat)
-                self.liste_rat_map.remove(rat)
+        lr = self.liste_rat_map
+        for i_rat in range(len(self.liste_rat_map)):
+            lr[i_rat].update(self.liste_rat_map)
+            if lr[i_rat].getY() == pyxel.height-8:
+                self.liste_rat_map.remove(lr[i_rat])
+            if lr[i_rat].getDistance(self.groupe_rat.joueur.getX(), self.groupe_rat.joueur.getY()) < 20:
+                self.groupe_rat.ajout_rat(lr[i_rat])
+                self.liste_rat_map.remove(lr[i_rat])
+            for obstable in self.obstacle.getPositions():
+                if lr[i_rat] == self.groupe_rat.joueur:
+                    if lr[i_rat].getDistance(obstable[0], obstable[1]) < 20:
+                        self.groupe_rat.liste_rats.remove(lr[i_rat])
+                elif lr[i_rat].getDistance(obstable[0], obstable[1]) < 20:
+                    del self.liste_rat_map[i_rat]
         
         self.distance_parcouru += 1
 
@@ -290,6 +333,7 @@ class App:
             boost.draw()
         for rat in self.liste_rat_map:
             rat.draw()
+        self.obstacle.draw()
 
 
 
