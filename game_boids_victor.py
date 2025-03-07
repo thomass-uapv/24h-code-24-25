@@ -247,7 +247,7 @@ class Obstacle:
         self.limite = 10
         self.quant = 0
         self.img = 0
-        self.liste_sprite = ((105,65,14,15),(144,41,15,23),(120,55,10,5),(75,2,23,30))
+        self.liste_sprite = ((144,41,15,23),(120,55,10,5),(105,65,14,15),(3,218,23,30))
         self.apply_sprite = []
 
     def apparition(self):
